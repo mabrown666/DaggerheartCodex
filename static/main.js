@@ -84,9 +84,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function formatStatblock(s) {
     if (!s) return '';
-    let out = `${s.name}\nTier ${s.tier} - ${s.category} / ${s.type}\n\n${s.description}\n\nStats:\n${s.stats}\n\nFeatures:\n`;
+    let out = `${s.name}\nTier ${s.tier} - ${s.category} / ${s.type}\n${s.description}\nStats:\n${s.stats}\nFeatures:\n`;
     (s.features || []).forEach(f => {
-      out += `- ${f.name} (${f.type})\n${f.description}\n\n`;
+      out += `- ${f.name} (${f.type}) : ${f.description}\n`;
     });
     return out;
   }

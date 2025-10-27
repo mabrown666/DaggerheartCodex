@@ -1,2 +1,9 @@
 body { padding-bottom: 40px; }
 .feature-item .card-body { padding: 10px; }
+
+#results {
+  height: 350px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6; /* Bootstrap's default border color */
+  border-radius: .375rem; /* Bootstrap's default border-radius */
+}
