@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2 id="formTitle">New / Edit Stat Block</h2>
+
+<form id="statForm">
+  <div class="mb-3">
+    <label class="form-label">Name</label>
+    <input id="name" class="form-control" required>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Category</label>
+      <select id="category" class="form-select" required>
+        {% for cat in categories.keys() %}
+        <option value="{{cat}}">{{cat}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Tier</label>
+      <select id="tier" class="form-select" required>
+        {% for t in tiers %}
+        <option value="{{t}}">{{t}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Type</label>
+      <select id="type" class="form-select"></select>
+    </div>
+  </div>
+
+  <div class="mb-3 mt-3">
+    <label class="form-label">Short Description</label>
+    <input id="description" class="form-control">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Stats (multiline)</label>
+    <textarea id="stats" class="form-control" rows="4"></textarea>
+  </div>
+
+  <h4>Features</h4>
+  <div id="features"></div>
+  <div class="my-2">
+    <button id="addFeature" class="btn btn-secondary">Add Feature</button>
+  </div>
+
+  <div class="mt-4">
+    <button id="saveBtn" type="button" class="btn btn-primary">Save</button>
+    <a class="btn btn-outline-secondary" href="/">Cancel</a>
+  </div>
+</form>
+
+<template id="featureTpl">
+  <div class="card mb-2 feature-item">
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <input class="form-control feature-name" placeholder="Feature name">
+        </div>
+        <div class="col-md-3">
+          <select class="form-select feature-type">
+            <option>Passive</option>
+            <option>Action</option>
+            <option>Reaction</option>
+          </select>
+        </div>
+        <div class="col-md-5 text-end">
+          <button class="btn btn-danger remove-feature">Remove</button>
+        </div>
+      </div>
+      <div class="mt-2">
+        <textarea class="form-control feature-desc" rows="3" placeholder="Feature description"></textarea>
+      </div>
+    </div>
+  </div>
+</template>
+
+{% endblock %}

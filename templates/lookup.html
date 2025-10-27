@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Lookup Stat Blocks</h2>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <label class="form-label">Category</label>
+    <select id="category" class="form-select">
+      <option value="">Any</option>
+      {% for cat in categories.keys() %}
+      <option value="{{cat}}">{{cat}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Tier</label>
+    <select id="tier" class="form-select">
+      <option value="">Any</option>
+      {% for t in tiers %}
+      <option value="{{t}}">{{t}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Type</label>
+    <select id="type" class="form-select">
+      <option value="">Any</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Text search</label>
+    <div class="input-group">
+      <input id="text" class="form-control" placeholder="Search name, description, features...">
+      <button id="searchBtn" class="btn btn-primary">Search</button>
+    </div>
+  </div>
+</div>
+
+<div id="results"></div>
+
+<h3 class="mt-4">Selected Stat Block (formatted)</h3>
+<textarea id="formatted" class="form-control" rows="10"></textarea>
+
+<script>
+// initial wiring handled in static/main.js
+</script>
+
+{% endblock %}
