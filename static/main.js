@@ -87,10 +87,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function formatStatblock(s) {
     if (!s) return '';
-    let out = `**${s.name}**\n*Tier ${s.tier} ${s.type} ${s.category}*\n\n`;
+    let out = `**${s.name}**\n*Tier ${s.tier} ${s.type} ${s.category}*\n`;
 
     if (s.description) {
-      out += `${s.description}\n\n`;
+      out += `${s.description}\n`;
     }
 
     if (s.category === 'Adversaries') {
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (s.potential_adversaries) out += `**Potential Adversaries:** ${s.potential_adversaries}\n`;
     }
 
-    out += `\n**Features**\n`;
+    out += `**Features**\n`;
     (s.features || []).forEach(f => {
       out += `* **${f.name} (${f.type}):** ${f.description}\n`;
     });
