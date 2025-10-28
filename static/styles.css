@@ -1,9 +1,32 @@
-body { padding-bottom: 40px; }
+body { 
+  padding-bottom: 40px; 
+  background-color: #AFC5DC;
+}
 .feature-item .card-body { padding: 10px; }
 
 #results {
-  height: 350px;
+  height: 400px;
   overflow-y: auto;
+  background-color: #ffebdc;
   border: 1px solid #dee2e6; /* Bootstrap's default border color */
   border-radius: .375rem; /* Bootstrap's default border-radius */
+}
+
+.results .card {
+  background-color: #EFE5C2;
+}
+
+.navbar-custom {
+  background-color: #112A6D;
+}
+
+.navbar-custom .navbar-brand,
+.navbar-custom .btn-outline-light {
+  color: #EFE3A7;
+  border-color: #EFE3A7;
+}
+
+.navbar-custom .btn-outline-light:hover {
+  background-color: #EFE3A7;
+  color: #112A6D;
 }
