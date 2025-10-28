@@ -40,8 +40,17 @@
 <label class="form-label">Search Results</label>
 <div id="results" class="p-2 mb-3"></div>
 
-<h3 class="mt-4">Selected Stat Block (formatted)</h3>
-<textarea id="formatted" class="form-control" rows="10"></textarea>
+<h3 class="mt-4">Selected Stat Block Details</h3>
+<div class="row">
+  <div class="col-md-6">
+    <label class="form-label">Formatted</label>
+    <textarea id="formatted" class="form-control" rows="10" readonly></textarea>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">JSON</label>
+    <textarea id="formattedJson" class="form-control" rows="10" readonly></textarea>
+  </div>
+</div>
 
 <script>
 // initial wiring handled in static/main.js

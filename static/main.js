@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const resultsDiv = document.getElementById('results');
   const textEl = document.getElementById('text');
   const formattedEl = document.getElementById('formatted');
+  const formattedJsonEl = document.getElementById('formattedJson');
   const lookupTypeEl = document.getElementById('type');
 
   if (searchBtn) {
@@ -76,7 +77,9 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(`/api/stat/${encodeURIComponent(name)}`)
           .then(r => r.json())
           .then(data => {
-            formattedEl.value = formatStatblock(data);
+            if (formattedEl) formattedEl.value = formatStatblock(data);
+            const outputJson = transformToOutputJson(data);
+            if (formattedJsonEl) formattedJsonEl.value = JSON.stringify(outputJson, null, 2);
           });
       });
     });
@@ -108,6 +111,88 @@ document.addEventListener('DOMContentLoaded', function () {
       out += `* **${f.name} (${f.type}):** ${f.description}\n`;
     });
     return out;
+  }
+
+  function transformToOutputJson(s) {
+    if (!s) return {};
+
+    if (s.category === 'Environments') {
+      const output = {
+        name: s.name || '',
+        tier: parseInt(s.tier, 10) || 1,
+        description: s.description || '',
+        impulses: [],
+        difficulty: s.difficulty || '',
+        adversaries: [],
+        features: []
+      };
+
+      // Split comma-separated strings into arrays
+      if (s.impulses) {
+        if (Array.isArray(s.impulses)) {
+          output.impulses = s.impulses;
+        } else if (typeof s.impulses === 'string') {
+          output.impulses = s.impulses.split(',').map(item => item.trim());
+        }
+      }
+      if (s.potential_adversaries) {
+        if (Array.isArray(s.potential_adversaries)) {
+          output.adversaries = s.potential_adversaries;
+        } else if (typeof s.potential_adversaries === 'string') {
+          output.adversaries = s.potential_adversaries.split(',').map(item => item.trim());
+        }
+      }
+      output.features = (s.features || []).map(f => ({ name: f.name, effect: f.description }));
+      return output;
+    } else if (s.category !== 'Adversaries') {
+      return s;
+    }
+
+    // Transform Adversary to the desired output format
+    const output = {
+      name: s.name || '',
+      hp: s.hp || '',
+      stress: s.stress || '',
+      thresholds: s.thresholds || '',
+      difficulty: s.difficulty || '',
+      experiences: [],
+      attacks: [],
+      features: []
+    };
+
+    // Experience
+    if (s.experience) {
+      s.experience.forEach(item => {
+        const trimmedItem = item.trim();
+        if (trimmedItem) {
+          const lastSpaceIndex = trimmedItem.lastIndexOf(' ');
+          if (lastSpaceIndex > -1) {
+            const name = trimmedItem.substring(0, lastSpaceIndex).trim();
+            const value = trimmedItem.substring(lastSpaceIndex + 1).trim();
+            output.experiences.push({ name: name, value: value });
+          } else {
+            // Handle cases with no value, e.g., "Climbing"
+            output.experiences.push({ name: trimmedItem, value: "" });
+          }
+        }
+      });
+    }
+
+    // Attacks
+    if (s.weapon) {
+      output.attacks.push({
+        name: s.weapon,
+        attack_bonus: parseInt(String(s.atk).replace('+', ''), 10) || 0,
+        damage: s.damage_dice || '',
+        damage_type: s.damage_type || '',
+        range: s.range || ''
+      });
+    }
+
+    // Features
+    output.features = (s.features || []).map(f => ({ name: f.name, effect: f.description }));
+
+    return output;
   }
 
   function escapeHtml(str) {
