@@ -1,58 +1,113 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h2 id="formTitle">New / Edit Stat Block</h2>
+<h2 id="formTitle">Create Stat Block</h2>
 
-<form id="statForm">
-  <div class="mb-3">
+<div class="row g-3 mb-3">
+  <div class="col-md-9">
     <label class="form-label">Name</label>
-    <input id="name" class="form-control" required>
+    <input id="name" class="form-control">
   </div>
+  <div class="col-md-3">
+    <label class="form-label">Category</label>
+    <select id="category" class="form-select">
+      {% for cat in categories.keys() %}
+      <option value="{{cat}}">{{cat}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Tier</label>
+    <select id="tier" class="form-select">
+      {% for t in tiers %}
+      <option value="{{t}}">{{t}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-9">
+    <label class="form-label">Type</label>
+    <select id="type" class="form-select"></select>
+  </div>
+  <div class="col-12">
+    <label class="form-label">Description (Markdown supported)</label>
+    <textarea id="description" class="form-control" rows="3"></textarea>
+  </div>
+</div>
 
-  <div class="row g-3">
-    <div class="col-md-4">
-      <label class="form-label">Category</label>
-      <select id="category" class="form-select" required>
-        {% for cat in categories.keys() %}
-        <option value="{{cat}}">{{cat}}</option>
-        {% endfor %}
-      </select>
+<!-- Adversary Fields -->
+<div id="adversaryFields" class="row g-3 mb-3" style="display: none;">
+  <div class="col-12">
+    <label class="form-label">Motives & Tactics</label>
+    <textarea id="motives_tactics" class="form-control" rows="2"></textarea>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Difficulty</label>
+    <input id="difficulty" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Thresholds</label>
+    <input id="thresholds" class="form-control">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">HP</label>
+    <input id="hp" class="form-control">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Stress</label>
+    <input id="stress" class="form-control">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">ATK</label>
+    <input id="atk" class="form-control" placeholder="+X">
+  </div>
+  <div class="col-12">
+    <h5>Weapon</h5>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Name</label>
+        <input id="weapon" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Range</label>
+        <input id="weapon_range" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Damage Dice</label>
+        <input id="weapon_damage_dice" class="form-control" placeholder="e.g., 1d6">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Damage Type</label>
+        <input id="weapon_damage_type" class="form-control">
+      </div>
     </div>
-    <div class="col-md-2">
-      <label class="form-label">Tier</label>
-      <select id="tier" class="form-select" required>
-        {% for t in tiers %}
-        <option value="{{t}}">{{t}}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-6">
-      <label class="form-label">Type</label>
-      <select id="type" class="form-select"></select>
-    </div>
   </div>
+  <div class="col-md-3">
+    <label class="form-label">Experience</label>
+    <input id="experience" class="form-control">
+  </div>
+</div>
 
-  <div class="mb-3 mt-3">
-    <label class="form-label">Short Description</label>
-    <input id="description" class="form-control">
+<!-- Environment Fields -->
+<div id="environmentFields" class="row g-3 mb-3" style="display: none;">
+  <div class="col-12">
+    <label class="form-label">Impulses</label>
+    <textarea id="impulses" class="form-control" rows="2"></textarea>
   </div>
+  <div class="col-md-6">
+    <label class="form-label">Difficulty</label>
+    <input id="env_difficulty" class="form-control">
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Potential Adversaries</label>
+    <input id="potential_adversaries" class="form-control">
+  </div>
+</div>
 
-  <div class="mb-3">
-    <label class="form-label">Stats (multiline)</label>
-    <textarea id="stats" class="form-control" rows="4"></textarea>
-  </div>
-
-  <h4>Features</h4>
-  <div id="features"></div>
-  <div class="my-2">
-    <button id="addFeature" class="btn btn-secondary">Add Feature</button>
-  </div>
-
-  <div class="mt-4">
-    <button id="saveBtn" type="button" class="btn btn-primary">Save</button>
-    <a class="btn btn-outline-secondary" href="/">Cancel</a>
-  </div>
-</form>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h3>Features</h3>
+  <button id="addFeature" class="btn btn-sm btn-outline-secondary">Add Feature</button>
+</div>
+<div id="features"></div>
 
 <template id="featureTpl">
   <div class="card mb-2 feature-item">
@@ -69,7 +124,7 @@
           </select>
         </div>
         <div class="col-md-5 text-end">
-          <button class="btn btn-danger remove-feature">Remove</button>
+          <button class="btn btn-sm btn-danger remove-feature">Remove</button>
         </div>
       </div>
       <div class="mt-2">
@@ -78,5 +133,10 @@
     </div>
   </div>
 </template>
+
+<div class="mt-4">
+  <button id="saveBtn" type="button" class="btn btn-primary">Save</button>
+  <a class="btn btn-outline-secondary" href="/">Cancel</a>
+</div>
 
 {% endblock %}

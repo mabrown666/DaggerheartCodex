@@ -86,10 +86,23 @@ def api_search():
         if type_ and s.get('type') != type_:
             continue
         if text:
-            hay = ' '.join([str(s.get('name','')), str(s.get('description','')), str(s.get('stats',''))]).lower()
-            # include features in search
+            # Build a searchable string from all relevant fields
+            haystack_fields = ['name', 'description', 'type']
+            hay = ' '.join([str(s.get(field, '')) for field in haystack_fields]).lower()
+
+            if s.get('category') == 'Adversaries':
+                adversary_fields = ['motives_tactics']
+                hay += ' ' + ' '.join([str(s.get(field, '')) for field in adversary_fields]).lower()
+                weapon_fields = ['weapon', 'damage_type']
+                hay += ' ' + ' '.join([str(s.get(field, '')) for field in weapon_fields]).lower()
+            elif s.get('category') == 'Environments':
+                environment_fields = ['impulses', 'potential_adversaries']
+                hay += ' ' + ' '.join([str(s.get(field, '')) for field in environment_fields]).lower()
+
+            # Include features in search
             for f in s.get('features', []):
-                hay += ' ' + str(f.get('name','')).lower() + ' ' + str(f.get('description','')).lower()
+                hay += f" {str(f.get('name','')).lower()} {str(f.get('description','')).lower()}"
+
             if text not in hay:
                 continue
 
@@ -125,17 +138,42 @@ def api_save():
     if existing:
         # overwrite
         data = [s for s in data if s.get('name','').strip().lower() != name.lower()]
+    
+    category = payload.get('category')
+    stat = {}
 
-    # build stat block object
-    stat = {
-        'name': name,
-        'category': payload.get('category', ''),
-        'tier': payload.get('tier', ''),
-        'type': payload.get('type', ''),
-        'description': payload.get('description', ''),
-        'stats': payload.get('stats', ''),
-        'features': payload.get('features', [])
-    }
+    if category == 'Adversaries':
+        stat = {
+            'name': name,
+            'category': category,
+            'tier': payload.get('tier'),
+            'type': payload.get('type'),
+            'description': payload.get('description'),
+            'motives_tactics': payload.get('motives_tactics'),
+            'difficulty': payload.get('difficulty'),
+            'thresholds': payload.get('thresholds'),
+            'hp': payload.get('hp'),
+            'stress': payload.get('stress'),
+            'atk': payload.get('atk'),
+            'weapon': payload.get('weapon'),
+            'range': payload.get('range'),
+            'damage_dice': payload.get('damage_dice'),
+            'damage_type': payload.get('damage_type'),
+            'experience': payload.get('experience'),
+            'features': payload.get('features', [])
+        }
+    elif category == 'Environments':
+        stat = {
+            'name': name,
+            'category': category,
+            'tier': payload.get('tier'),
+            'type': payload.get('type'),
+            'description': payload.get('description'),
+            'impulses': payload.get('impulses'),
+            'difficulty': payload.get('difficulty'),
+            'potential_adversaries': payload.get('potential_adversaries'),
+            'features': payload.get('features', [])
+        }
 
     data.append(stat)
     save_data(data)

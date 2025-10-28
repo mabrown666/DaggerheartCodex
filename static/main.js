@@ -84,9 +84,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function formatStatblock(s) {
     if (!s) return '';
-    let out = `${s.name}\nTier ${s.tier} - ${s.category} / ${s.type}\n${s.description}\nStats:\n${s.stats}\nFeatures:\n`;
+    let out = `**${s.name}**\n*Tier ${s.tier} ${s.type} ${s.category}*\n\n`;
+
+    if (s.description) {
+      out += `${s.description}\n\n`;
+    }
+
+    if (s.category === 'Adversaries') {
+      if (s.motives_tactics) out += `**Motives & Tactics:** ${s.motives_tactics}\n`;
+      out += `**Difficulty:** ${s.difficulty || ''}\n`;
+      out += `**Thresholds:** ${s.thresholds || ''} | **HP:** ${s.hp || ''} | **Stress:** ${s.stress || ''}\n`;
+      // Weapon line
+      out += `**${s.weapon || 'Weapon'}** (${s.atk || ''}, ${s.range || 'Range'}) - ${s.damage_dice || ''} ${s.damage_type || ''} damage\n`;
+      out += `**Experience:** ${s.experience || ''}\n`;
+    } else if (s.category === 'Environments') {
+      if (s.impulses) out += `**Impulses:** ${s.impulses}\n`;
+      out += `**Difficulty:** ${s.difficulty || ''}\n`;
+      if (s.potential_adversaries) out += `**Potential Adversaries:** ${s.potential_adversaries}\n`;
+    }
+
+    out += `\n**Features**\n`;
     (s.features || []).forEach(f => {
-      out += `- ${f.name} (${f.type}) : ${f.description}\n`;
+      out += `* **${f.name} (${f.type}):** ${f.description}\n`;
     });
     return out;
   }
@@ -106,10 +125,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveBtn = document.getElementById('saveBtn');
     const nameField = document.getElementById('name');
     const tierField = document.getElementById('tier');
-    const descField = document.getElementById('description');
-    const statsField = document.getElementById('stats');
     const updateCategoryEl = document.getElementById('category');
     const updateTypeEl = document.getElementById('type');
+
+    // Show/hide fields based on category
+    function toggleCategoryFields() {
+      const category = updateCategoryEl.value;
+      document.getElementById('adversaryFields').style.display = category === 'Adversaries' ? '' : 'none';
+      document.getElementById('environmentFields').style.display = category === 'Environments' ? '' : 'none';
+    }
+
+    updateCategoryEl.addEventListener('change', () => {
+      loadTypesForCategory(updateCategoryEl.value, updateTypeEl);
+      toggleCategoryFields();
+    });
+
 
     function addFeatureRow(feature) {
       const node = featureTpl.content.cloneNode(true);
@@ -138,19 +168,40 @@ document.addEventListener('DOMContentLoaded', function () {
             updateCategoryEl.value = data.category || updateCategoryEl.value;
             loadTypesForCategory(updateCategoryEl.value, updateTypeEl);
             setTimeout(() => { updateTypeEl.value = data.type || ''; }, 100);
-            tierField.value = data.tier || tierField.value;
-            descField.value = data.description || '';
-            statsField.value = data.stats || '';
+            tierField.value = data.tier || '';
+            document.getElementById('description').value = data.description || '';
+
+            if (data.category === 'Adversaries') {
+              document.getElementById('motives_tactics').value = data.motives_tactics || '';
+              document.getElementById('difficulty').value = data.difficulty || '';
+              document.getElementById('thresholds').value = data.thresholds || '';
+              document.getElementById('hp').value = data.hp || '';
+              document.getElementById('stress').value = data.stress || '';
+              document.getElementById('atk').value = data.atk || '';
+              document.getElementById('weapon').value = data.weapon || '';
+              document.getElementById('weapon_range').value = data.range || '';
+              document.getElementById('weapon_damage_dice').value = data.damage_dice || '';
+              document.getElementById('weapon_damage_type').value = data.damage_type || '';
+              document.getElementById('experience').value = data.experience || '';
+            } else if (data.category === 'Environments') {
+              document.getElementById('impulses').value = data.impulses || '';
+              document.getElementById('env_difficulty').value = data.difficulty || '';
+              document.getElementById('potential_adversaries').value = data.potential_adversaries || '';
+            }
+
             (data.features || []).forEach(f => addFeatureRow(f));
+            toggleCategoryFields();
           }
         });
     } else {
       // initialize types for selected category
       loadTypesForCategory(updateCategoryEl.value, updateTypeEl);
+      toggleCategoryFields();
     }
 
-    // when category change, update type list
-    updateCategoryEl.addEventListener('change', () => loadTypesForCategory(updateCategoryEl.value, updateTypeEl));
+    // Initial call on page load
+    loadTypesForCategory(updateCategoryEl.value, updateTypeEl);
+    toggleCategoryFields();
 
     saveBtn.addEventListener('click', () => {
       const features = [];
@@ -161,15 +212,34 @@ document.addEventListener('DOMContentLoaded', function () {
         if (name) features.push({name, type, description: desc});
       });
 
-      const payload = {
+      const category = updateCategoryEl.value;
+      let payload = {
         name: nameField.value,
-        category: updateCategoryEl.value,
+        category: category,
         tier: tierField.value,
         type: updateTypeEl.value,
-        description: descField.value,
-        stats: statsField.value,
+        description: document.getElementById('description').value,
         features
       };
+
+      if (category === 'Adversaries') {
+        payload.motives_tactics = document.getElementById('motives_tactics').value;
+        payload.difficulty = document.getElementById('difficulty').value;
+        payload.thresholds = document.getElementById('thresholds').value;
+        payload.hp = document.getElementById('hp').value;
+        payload.stress = document.getElementById('stress').value;
+        payload.atk = document.getElementById('atk').value;
+        payload.weapon = document.getElementById('weapon').value;
+        payload.range = document.getElementById('weapon_range').value;
+        payload.damage_dice = document.getElementById('weapon_damage_dice').value;
+        payload.damage_type = document.getElementById('weapon_damage_type').value;
+        payload.experience = document.getElementById('experience').value;
+      } else if (category === 'Environments') {
+        payload.impulses = document.getElementById('impulses').value;
+        payload.difficulty = document.getElementById('env_difficulty').value;
+        payload.potential_adversaries = document.getElementById('potential_adversaries').value;
+      }
+
 
       fetch('/api/save', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
         .then(r => r.json())
