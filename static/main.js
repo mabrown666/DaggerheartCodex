@@ -280,6 +280,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     } else {
       // initialize types for selected category
+      const categoryParam = params.get('category');
+      if (categoryParam) {
+        updateCategoryEl.value = categoryParam;
+      }
       loadTypesForCategory(updateCategoryEl.value, updateTypeEl);
       toggleCategoryFields();
     }
