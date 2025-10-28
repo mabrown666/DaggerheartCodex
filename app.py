@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
 
 app = Flask(__name__)
@@ -21,9 +22,14 @@ TIERS = [1, 2, 3, 4]
 def ensure_data():
     if not os.path.isdir(DATA_DIR):
         os.makedirs(DATA_DIR, exist_ok=True)
+    
     if not os.path.isfile(DATA_FILE):
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump([], f, indent=2)
+        default_file = os.path.join(DATA_DIR, "statblocks_default.json")
+        if os.path.isfile(default_file):
+            shutil.copy(default_file, DATA_FILE)
+        else:
+            with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump([], f, indent=2)
 
 
 def load_data():
