@@ -209,9 +209,27 @@ document.addEventListener('DOMContentLoaded', function () {
     const featureTpl = document.getElementById('featureTpl');
     const saveBtn = document.getElementById('saveBtn');
     const nameField = document.getElementById('name');
+    const truecaseBtn = document.getElementById('truecase-name-btn');
     const tierField = document.getElementById('tier');
     const updateCategoryEl = document.getElementById('category');
     const updateTypeEl = document.getElementById('type');
+
+    // Function to replace newlines with spaces
+    function handleFormatNewline(event) {
+      const button = event.currentTarget;
+      const textarea = button.parentElement.querySelector('textarea');
+      if (textarea) {
+        textarea.value = textarea.value.replace(/(\r\n|\n|\r)/gm, " ").trim().replace(/fi /g, "fi").replace(/fl /g, "fl");
+      }
+    }
+
+    // Function to convert string to Title Case
+    function toTitleCase(str) {
+      if (!str) return '';
+      return str.replace(/\w\S*/g, (txt) => {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      });
+    }
 
     // Show/hide fields based on category
     function toggleCategoryFields() {
@@ -235,10 +253,17 @@ document.addEventListener('DOMContentLoaded', function () {
         el.querySelector('.feature-desc').value = feature.description || '';
       }
       el.querySelector('.remove-feature').addEventListener('click', (ev) => { ev.preventDefault(); el.remove(); });
+      el.querySelector('.format-newline-btn').addEventListener('click', handleFormatNewline);
       featuresDiv.appendChild(el);
     }
 
     addFeatureBtn.addEventListener('click', (ev) => { ev.preventDefault(); addFeatureRow(); });
+
+    document.querySelectorAll('.format-newline-btn').forEach(btn => btn.addEventListener('click', handleFormatNewline));
+
+    if (truecaseBtn && nameField) {
+      truecaseBtn.addEventListener('click', () => { nameField.value = toTitleCase(nameField.value); });
+    }
 
     // load when name query param present
     const params = new URLSearchParams(window.location.search);

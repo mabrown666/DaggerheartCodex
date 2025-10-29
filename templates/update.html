@@ -6,7 +6,10 @@
 <div class="row g-3 mb-3">
   <div class="col-md-9">
     <label class="form-label">Name</label>
-    <input id="name" class="form-control">
+    <div class="input-group">
+      <input id="name" class="form-control">
+      <button class="btn btn-outline-secondary" type="button" id="truecase-name-btn" title="Convert to Title Case">Aa</button>
+    </div>
   </div>
   <div class="col-md-3">
     <label class="form-label">Category</label>
@@ -30,7 +33,10 @@
   </div>
   <div class="col-12">
     <label class="form-label">Description (Markdown supported)</label>
-    <textarea id="description" class="form-control" rows="3"></textarea>
+    <div class="input-group">
+      <textarea id="description" class="form-control" rows="3"></textarea>
+      <button class="btn btn-outline-secondary format-newline-btn" type="button" title="Remove newlines">↵</button>
+    </div>
   </div>
 </div>
 
@@ -38,7 +44,10 @@
 <div id="adversaryFields" class="row g-3 mb-3" style="display: none;">
   <div class="col-12">
     <label class="form-label">Motives & Tactics</label>
-    <textarea id="motives_tactics" class="form-control" rows="2"></textarea>
+    <div class="input-group">
+      <textarea id="motives_tactics" class="form-control" rows="2"></textarea>
+      <button class="btn btn-outline-secondary format-newline-btn" type="button" title="Remove newlines">↵</button>
+    </div>
   </div>
   <div class="col-md-3">
     <label class="form-label">Difficulty</label>
@@ -69,7 +78,13 @@
       </div>
       <div class="col-md-2">
         <label class="form-label">Range</label>
-        <input id="weapon_range" class="form-control">
+        <select id="weapon_range" class="form-select">
+          <option>Melee</option>
+          <option>Very Close</option>
+          <option>Close</option>
+          <option>Far</option>
+          <option>Very Far</option>
+        </select>
       </div>
       <div class="col-md-3">
         <label class="form-label">Damage Dice</label>
@@ -77,7 +92,10 @@
       </div>
       <div class="col-md-3">
         <label class="form-label">Damage Type</label>
-        <input id="weapon_damage_type" class="form-control">
+        <select id="weapon_damage_type" class="form-select">
+          <option>phy</option>
+          <option>mag</option>
+        </select>
       </div>
     </div>
   </div>
@@ -91,7 +109,10 @@
 <div id="environmentFields" class="row g-3 mb-3" style="display: none;">
   <div class="col-12">
     <label class="form-label">Impulses</label>
-    <textarea id="impulses" class="form-control" rows="2"></textarea>
+    <div class="input-group">
+      <textarea id="impulses" class="form-control" rows="2"></textarea>
+      <button class="btn btn-outline-secondary format-newline-btn" type="button" title="Remove newlines">↵</button>
+    </div>
   </div>
   <div class="col-md-6">
     <label class="form-label">Difficulty</label>
@@ -130,7 +151,10 @@
         </div>
       </div>
       <div class="mt-2">
-        <textarea class="form-control feature-desc" rows="3" placeholder="Feature description"></textarea>
+        <div class="input-group">
+          <textarea class="form-control feature-desc" rows="3" placeholder="Feature description"></textarea>
+          <button class="btn btn-outline-secondary format-newline-btn" type="button" title="Remove newlines">↵</button>
+        </div>
       </div>
     </div>
   </div>
