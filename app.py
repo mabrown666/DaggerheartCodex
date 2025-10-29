@@ -155,7 +155,7 @@ def api_save():
             'tier': payload.get('tier'),
             'type': payload.get('type'),
             'description': payload.get('description'),
-            'motives_tactics': payload.get('motives_tactics'),
+            'motives_tactics': [m.strip() for m in (payload.get('motives_tactics') or '').split(',') if m.strip()],
             'difficulty': payload.get('difficulty'),
             'thresholds': payload.get('thresholds'),
             'hp': payload.get('hp'),
@@ -165,7 +165,7 @@ def api_save():
             'range': payload.get('range'),
             'damage_dice': payload.get('damage_dice'),
             'damage_type': payload.get('damage_type'),
-            'experience': payload.get('experience'),
+            'experience': [e.strip() for e in (payload.get('experience') or '').split(',') if e.strip()],
             'features': payload.get('features', [])
         }
     elif category == 'Environments':
@@ -175,7 +175,7 @@ def api_save():
             'tier': payload.get('tier'),
             'type': payload.get('type'),
             'description': payload.get('description'),
-            'impulses': payload.get('impulses'),
+            'impulses': [i.strip() for i in (payload.get('impulses') or '').split(',') if i.strip()],
             'difficulty': payload.get('difficulty'),
             'potential_adversaries': payload.get('potential_adversaries'),
             'features': payload.get('features', [])
