@@ -51,6 +51,11 @@ Once the application is running, you can use the web interface to:
 *   **Edit cards:** Click the "Edit" button on a card's detail page to modify its contents.
 *   **Create new cards:** Use the "Create New" feature to add new cards to the codex.
 
+## API Documentation
+
+The Daggerheart Codex has some basic API for intergrarion into other programs. See [API Documentation](api.md) for details.
+
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

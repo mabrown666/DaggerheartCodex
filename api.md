@@ -173,3 +173,81 @@ Creates a new statblock or updates an existing one if the name matches.
     }
     ```
 
+---
+
+## Example Statblock
+
+Currently there are two types of statblocks: Adversaries and Environments.
+
+### Example of an Adversary
+
+```json
+  {
+    "category": "Adversaries",
+    "name": "Apprentice Assassin",
+    "description": "A young trainee eager to prove themselves.",
+    "tier": 2,
+    "type": "Minion",
+    "motives_tactics": [
+      "Act reckless",
+      "kill",
+      "prove their worth",
+      "show off"
+    ],
+    "difficulty": 13,
+    "thresholds": "None",
+    "hp": 1,
+    "stress": 1,
+    "atk": "-1",
+    "weapon": "Thrown Dagger",
+    "range": "Very Close",
+    "damage_dice": "4",
+    "damage_type": "phy",
+    "experience": [
+      "Intrusion +2"
+    ],
+    "features": [
+      {
+        "name": "Minion (6)",
+        "type": "Passive",
+        "description": "The Assassin is defeated when they take any damage. For every 6 damage a PC deals to the Assassin, defeat an additional Minion within range the attack would succeed against."
+      },
+      {
+        "name": "Group Attack",
+        "type": "Action",
+        "description": "Spend a Fear to choose a target and spotlight all Apprentice Assassins within Close range of them. Those Minions move into Melee range of the target and make one shared attack roll. On a success, they deal 4 physical damage each. Combine this damage."
+      }
+    ]
+  }
+```
+
+### Example of an Environment
+
+```json
+  {
+    "category": "Environments",
+    "name": "Crystal Wasteland",
+    "tier": "3",
+    "type": "Traversal",
+    "description": "A harsh and alien landscape that shines with towers of glittering crystal.",
+    "impulses": [
+      "Cut them to their core",
+      "fracture their psyches",
+      "show their true reflection"
+    ],
+    "difficulty": "16",
+    "potential_adversaries": "Adult Flickerfly, Constructs, Crystal Guardians (Vault Guardians), Elemental Spark, Whisper Wraiths",
+    "features": [
+      {
+        "name": "Harmonic Resonance",
+        "type": "Passive",
+        "description": "The crystals here reverberate with magical energy. A PC can make a downtime move to try and Attune to the environment with a successful Spellcast Roll. Spellcast Rolls made by an Attuned PC inside the Crystal Wasteland have advantage. A PC clears the condition when they leave the wasteland.\nHow does attunement to this place alter your sensory experience of it? What sound or song from your childhood does this place conjure?"
+      },
+      {
+        "name": "Gravitational Anomalies",
+        "type": "Action",
+        "description": "Strange, localized phenomena dot the landscape, warping distance and direction. Spend a Fear to alter the gravity at a point of your choice. All targets within Close range of that point must make a Knowledge Reaction Roll to calculate their new trajectories. Targets who fail take 3d8+4 physical damage as they are thrown up and away. Targets who succeed must mark a Stress or take half damage.\nWhat does it feel like as your body and mind fight to re-establish equilibrium? Is there any way to use this to your advantage?"
+      }
+    ]
+  },
+```
