@@ -123,6 +123,34 @@ def api_search():
     return jsonify({'results': results})
 
 
+# --- External APIs ---
+
+@app.route('/api/adversaries')
+def api_adversaries():
+    """Returns a list of all adversaries with basic information."""
+    data = load_data()
+    adversaries = [
+        {
+            'name': s.get('name', ''),
+            'tier': s.get('tier', ''),
+            'type': s.get('type', ''),
+            'description': s.get('description', '')
+        }
+        for s in data if s.get('category') == 'Adversaries'
+    ]
+    return jsonify(adversaries)
+
+
+@app.route('/api/environments')
+def api_environments():
+    """Returns a list of all environments with basic information."""
+    data = load_data()
+    environments = [
+        {key: s.get(key, '') for key in ['name', 'tier', 'type', 'description']}
+        for s in data if s.get('category') == 'Environments'
+    ]
+    return jsonify(environments)
+
 @app.route('/api/stat/<path:name>')
 def api_stat(name):
     data = load_data()
@@ -134,6 +162,7 @@ def api_stat(name):
 
 @app.route('/api/save', methods=['POST'])
 def api_save():
+    """Creates a new statblock or updates an existing one."""
     payload = request.get_json() or {}
     name = (payload.get('name') or '').strip()
     if not name:
