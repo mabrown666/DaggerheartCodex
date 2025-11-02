@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Common: category -> types wiring
   const categoryEl = document.getElementById('category');
   const typeEl = document.getElementById('type');
+  let currentStatName = null; // To store the name of the currently viewed statblock
 
   function loadTypesForCategory(cat, targetTypeEl) {
     targetTypeEl = targetTypeEl || typeEl;
@@ -77,11 +78,36 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(`/api/stat/${encodeURIComponent(name)}`)
           .then(r => r.json())
           .then(data => {
+            currentStatName = data.name; // Store the name
             if (formattedEl) formattedEl.value = formatStatblock(data);
             const outputJson = transformToOutputJson(data);
             if (formattedJsonEl) formattedJsonEl.value = JSON.stringify(outputJson, null, 2);
           });
       });
+    });
+  }
+
+  // Re-tier wiring
+  const retierBtn = document.getElementById('retierBtn');
+  if (retierBtn) {
+    retierBtn.addEventListener('click', () => {
+      if (!currentStatName) {
+        alert('Please view a statblock first.');
+        return;
+      }
+      const newTier = document.getElementById('retier-tier').value;
+      const payload = {
+        name: currentStatName,
+        new_tier: newTier
+      };
+
+      fetch('/api/retier', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+        .then(r => r.json())
+        .then(data => {
+          if (formattedEl) formattedEl.value = formatStatblock(data);
+          const outputJson = transformToOutputJson(data);
+          if (formattedJsonEl) formattedJsonEl.value = JSON.stringify(outputJson, null, 2);
+        });
     });
   }
 

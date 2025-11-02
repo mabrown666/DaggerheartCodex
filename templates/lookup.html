@@ -52,6 +52,21 @@
   </div>
 </div>
 
+<h3 class="mt-4">Re-Tier Statblock</h3>
+<div class="row g-3 align-items-end mb-3">
+    <div class="col-md-2">
+        <label for="retier-tier" class="form-label">New Tier</label>
+        <select id="retier-tier" class="form-select">
+            {% for t in tiers %}
+            <option value="{{t}}">{{t}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button id="retierBtn" class="btn btn-secondary">Re-Tier</button>
+    </div>
+</div>
+
 <script>
 // initial wiring handled in static/main.js
 </script>

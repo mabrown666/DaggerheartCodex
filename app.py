@@ -1,6 +1,7 @@
 import os
 import json
 import shutil
+import re
 from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
 
 app = Flask(__name__)
@@ -50,6 +51,73 @@ def find_stat(data, name):
         if s.get('name', '').strip().lower() == name_lower:
             return s
     return None
+
+def revalue_dice(dice_str, old_tier, new_tier):
+    "Ppdates dice roll description based on a tier change."
+    dice_regex = r'^(\d+)d(\d+)([+-]\d+)?$'
+    match = re.match(dice_regex, dice_str.strip().lower())
+    if match:
+        num_dice = int(match.group(1))
+        dice_size = int(match.group(2))
+        modifier_str = match.group(3)
+        modifier = int(modifier_str) if modifier_str else 0
+        num_dice=int((num_dice / old_tier) * new_tier)
+        modifier=0 if modifier==0 else int((modifier / old_tier) * new_tier)
+        if modifier==0:
+            dice_str = f"{int(num_dice)}d{dice_size}"
+        else:
+            dice_str = f"{int(num_dice)}d{dice_size}{'+' if modifier > 0 else ''}{modifier}"
+    elif int(dice_str)>0:
+        d=int((int(dice_str)/old_tier) * new_tier)
+        dice_str=f"{d}"
+    return dice_str
+
+def retier(stat, new_tier):
+    """Placeholder function to perform re-tier calculations."""
+    thresholds_regex = r'^(\d+)/(\d+)$'
+    if stat:
+        if stat['category']!='Adversaries':
+            return None
+        old_tier = stat.get('tier')
+        if not old_tier:
+            return None
+        stat['tier'] = new_tier
+        new_tier=int(new_tier)
+        old_tier=int(old_tier)
+        tier_dif=int(new_tier) - int(old_tier)
+        if tier_dif==0:
+            return None
+        tier_change_text=["Inferior", "Lesser", "Small", "" , "Large", "Greater", "Superior"][(int(new_tier) - int(old_tier))+3]
+        stat['name'] = f"{tier_change_text} {stat['name']}"
+        stat['damage_dice'] = revalue_dice(stat['damage_dice'], old_tier, new_tier)
+        match = re.match(thresholds_regex, stat['thresholds'].strip().lower())
+        if match:
+            low_threshold = int(match.group(1))
+            high_threshold = int(match.group(2))
+            low_threshold=low_threshold + (6 * tier_dif)
+            high_threshold=high_threshold + (11 * tier_dif)
+            stat['thresholds'] = f"{low_threshold}/{high_threshold}"
+        atk=int(stat['atk'])
+        atk=atk + (tier_dif)
+        stat['atk']=f"{'+' if atk>0 else ''}{atk}"
+        hp=int(stat['hp'])
+        hp=hp + (2 * tier_dif)
+        stat['hp']=f"{hp}"
+        stress=int(stat['stress'])
+        stress=stress + (2 * tier_dif)
+        stat['stress']=f"{stress}"
+        difficulty=int(stat['difficulty'])
+        difficulty=difficulty + (3 * tier_dif)
+        stat['difficulty']=f"{difficulty}"
+
+        for feature in stat["features"]:
+            feature["description"] = re.sub(
+                r'(\d+d\d+[+-]\d+|\d+d\d+)', 
+                lambda match: revalue_dice(match.group(0), old_tier, new_tier),
+                feature["description"]
+            )
+
+    return stat
 
 
 @app.route('/')
@@ -158,6 +226,25 @@ def api_stat(name):
     if not found:
         return jsonify({'error': 'Not found'}), 404
     return jsonify(found)
+
+
+@app.route('/api/retier', methods=['POST'])
+def api_retier():
+    """Finds a statblock and returns a modified version for a new tier."""
+    payload = request.get_json() or {}
+    name = (payload.get('name') or '').strip()
+    new_tier = payload.get('new_tier')
+
+    if not name or not new_tier:
+        return jsonify({'error': 'Name and new_tier are required'}), 400
+
+    data = load_data()
+    stat = find_stat(data, name)
+    if not stat:
+        return jsonify({'error': 'Not found'}), 404
+
+    modified_stat = retier(stat.copy(), new_tier)
+    return jsonify(modified_stat or stat)
 
 
 @app.route('/api/save', methods=['POST'])

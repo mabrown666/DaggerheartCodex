@@ -175,6 +175,47 @@ Creates a new statblock or updates an existing one if the name matches.
 
 ---
 
+## Re-Tier Adversary
+
+Calculates and returns a modified version of an Adversary statblock for a new tier. This endpoint only applies to statblocks in the "Adversaries" category.
+
+*   **Endpoint:** `POST /api/retier`
+*   **Method:** `POST`
+*   **Request Body:** A JSON object containing the name of the adversary and the target tier.
+    *   `name` (string, required): The name of the adversary to re-tier.
+    *   `new_tier` (integer, required): The desired new tier for the adversary.
+*   **Success Response:**
+    *   **Code:** 200 OK
+    *   **Content:** The full JSON object for the re-tiered adversary statblock. If the statblock is not an Adversary, the original, unmodified statblock is returned.
+*   **Error Responses:**
+    *   **Code:** 400 Bad Request
+    *   **Content:** `{"error": "Name and new_tier are required"}`
+    *   **Code:** 404 Not Found
+    *   **Content:** `{"error": "Not found"}`
+*   **Example Request Body:**
+    ```json
+    {
+        "name": "Bear",
+        "new_tier": 2
+    }
+    ```
+*   **Example Response (for re-tiering a Tier 1 Bear to Tier 2):**
+    ```json
+    {
+      "atk": "+2",
+      "category": "Adversaries",
+      "damage_dice": "2d8+6",
+      "damage_type": "phy",
+      "description": "A large bear with thick fur and powerful claws.",
+      "difficulty": "17",
+      "experience": [ "Ambusher +3", "Keen Senses +2" ],
+      "features": [ ... ],
+      "hp": "9",
+      "name": "Large Bear",
+      ...
+    }
+    ```
+
 ## Example Statblock
 
 Currently there are two types of statblocks: Adversaries and Environments.
