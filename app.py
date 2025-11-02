@@ -62,6 +62,7 @@ def revalue_dice(dice_str, old_tier, new_tier):
         modifier_str = match.group(3)
         modifier = int(modifier_str) if modifier_str else 0
         num_dice=int((num_dice / old_tier) * new_tier)
+        num_dice=1 if num_dice<1 else num_dice
         modifier=0 if modifier==0 else int((modifier / old_tier) * new_tier)
         if modifier==0:
             dice_str = f"{int(num_dice)}d{dice_size}"
