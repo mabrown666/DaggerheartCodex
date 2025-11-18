@@ -132,84 +132,212 @@ def parse_text_statblock(text):
 
     # First line is usually the name
     stat['name'] = lines.pop(0)
+    if not stat['name']: # Name is mandatory
+        return {}
 
     # Second line for Tier, Type, Category
-    if lines:
+    # Initialize these to empty strings in case they are not found
+    stat['tier'] = '1'
+    stat['category'] = 'Adversaries'
+    stat['type'] = 'Solo'
+
+    # look for Tier, Type, Category information in the line after the name
+    if lines[0].startswith('Tier '):
         tier_line = lines.pop(0)
         tier_match = re.search(r'Tier (\d+)', tier_line, re.IGNORECASE)
         if tier_match:
             stat['tier'] = int(tier_match.group(1))
+            for cat, types in CATEGORIES.items():
+                for t in types:
+                    if re.search(r'\b' + re.escape(t) + r'\b', tier_line, re.IGNORECASE):
+                        stat['category'] = cat
+                        stat['type'] = t
+                        break
 
-        # Infer category and type
-        for cat, types in CATEGORIES.items():
-            for t in types:
-                if re.search(r'\b' + re.escape(t) + r'\b', tier_line, re.IGNORECASE):
-                    stat['category'] = cat
-                    stat['type'] = t
-                    break
-            if stat.get('category'):
-                break
+    # Description: The first non-empty line after name/tier that doesn't look like a key-value pair or "Features"
+    description_lines = []
+    # Look for description before processing other key-value pairs
+    while lines and not re.match(r'^\w+.*?:', lines[0]) and not lines[0].lower().startswith('motives') and not lines[0].lower().startswith('impulses'):
+        description_lines.append(lines.pop(0))
+    if description_lines:
+        stat['description'] = " ".join(description_lines).strip()
+    else:
+        stat['description'] = ''
 
-    # Key-value pairs and features
-    feature_section = False
-    current_feature = None
+    if stat['category']=='Adversaries':
+        # load motives_tactics from the next no-blank line
+        if lines and lines[0].strip():
+            motive_line = lines.pop(0).split(':', 1)[1]
+            stat['motives_tactics'] = motive_line.strip().split(',')
 
-    for line in lines:
-        if line.lower() == 'features':
-            feature_section = True
-            if current_feature:
-                stat['features'].append(current_feature)
-                current_feature = None
-            continue
 
-        if feature_section:
-            # Regex to capture feature name, type, and description
-            feature_match = re.match(r'^(.*?)\s*\((Action|Reaction|Passive|Evolution|Transformation)\s*\):(.*)$', line, re.IGNORECASE)
-            if feature_match:
+        feature_section = False # Flag to indicate if we are in the features section
+        current_feature = None # To build multi-line feature descriptions
+
+        for line in lines: # Iterate through the remaining lines
+            line_lower = line.lower()
+
+            if line_lower == 'features':
+                feature_section = True
                 if current_feature:
                     stat['features'].append(current_feature)
-                
-                current_feature = {
-                    "name": feature_match.group(1).strip(),
-                    "type": feature_match.group(2).strip().capitalize(),
-                    "description": feature_match.group(3).strip()
-                }
-            elif current_feature:
-                # Append to the description of the current feature
-                current_feature["description"] += " " + line
-        else:
-            # Handle key-value pairs
-            parts = line.split(':', 1)
-            if len(parts) == 2:
-                key, value = parts[0].strip().lower().replace(' ', '_'), parts[1].strip()
-                
-                # Mapping for keys that don't directly match the statblock format
-                key_map = {
-                    'motives_&_tactics': 'motives_tactics',
-                    'potential_adversaries': 'potential_adversaries',
-                    'damage': 'damage_dice' # Assuming a simple format for now
-                }
-                key = key_map.get(key, key)
+                    current_feature = None
+                continue
 
-                if key in ['motives_tactics', 'impulses', 'experience']:
-                    stat[key] = [item.strip() for item in value.split(',')]
-                elif key == 'damage_dice':
-                    damage_parts = value.split()
-                    stat['damage_dice'] = damage_parts[0] if len(damage_parts) > 0 else ''
-                    stat['damage_type'] = damage_parts[1] if len(damage_parts) > 1 else ''
-                else:
-                    stat[key] = value
+            if feature_section:
+                # Regex to capture feature name, type, and description
+                # Handles both (Type): and – Type:
+                feature_match = re.match(r'^(.*?)\s*(?:\((Action|Reaction|Passive|Evolution|Transformation)\)|–\s*(Action|Reaction|Passive|Evolution|Transformation))\s*:\s*(.*)$', line, re.IGNORECASE)
+                if feature_match:
+                    if current_feature:
+                        stat['features'].append(current_feature)
+                    
+                    feature_type = (feature_match.group(2) or feature_match.group(3) or '').strip().capitalize()
+                    current_feature = { # Store as dict
+                        "name": feature_match.group(1).strip(),
+                        "type": feature_type,
+                        "description": feature_match.group(4).strip()
+                    }
+                elif current_feature:
+                    # Append to the description of the current feature
+                    current_feature["description"] += f"\n" + line.strip()
+            else:
+                # Handle key-value pairs
+                Difficulty_line_match = re.match(r"Difficulty: ?(\d+)\s*\|.*?(\d+\s*/\s*\d+)\s*\|.*?(\d+)\s*\|.*?(\d+)", line, re.IGNORECASE)
+                if Difficulty_line_match:
+                    stat['difficulty'] = Difficulty_line_match.group(1).strip()
+                    stat['thresholds'] = Difficulty_line_match.group(2).strip()
+                    stat['hp'] = Difficulty_line_match.group(3).strip()
+                    stat['stress'] =Difficulty_line_match.group(4).strip()
+                    continue # Move to next line after parsing Difficulty
 
-    if current_feature:
-        stat['features'].append(current_feature)
+                # Specific parsing for ATK line due to its complex structure
+                atk_line_match = re.match(r'ATK:\s*([+-]?\d+)\s*\|\s*(.*?)\s*\|\s*(\S+)\s*(\S+)', line, re.IGNORECASE)
+                if atk_line_match:
+                    stat['atk'] = atk_line_match.group(1).strip()
+                    weapon_and_range_str = atk_line_match.group(2).strip()
+                    
+                    # Parse weapon and range from the middle part
+                    if ':' in weapon_and_range_str:
+                        weapon_parts = weapon_and_range_str.split(':', 1)
+                        stat['weapon'] = weapon_parts[0].strip()
+                        stat['range'] = weapon_parts[1].strip()
+                    else:
+                        # Assume last word is range, rest is weapon
+                        parts = weapon_and_range_str.rsplit(' ', 1)
+                        if len(parts) == 2:
+                            stat['weapon'] = parts[0].strip()
+                            stat['range'] = parts[1].strip()
+                        else: # Only one word, assume it's weapon
+                            stat['weapon'] = weapon_and_range_str
+                            stat['range'] = '' # Default to empty string if no range found
 
-    # If description is not found as a key, assume the first long line after tier is description
-    if 'description' not in stat and lines:
-        # A simple heuristic: if a line has more than 5 words and no ':', it's likely a description.
-        for i, line in enumerate(lines):
-             if len(line.split()) > 5 and ':' not in line and not feature_section:
-                 stat['description'] = line
-                 break
+                    stat['damage_dice'] = atk_line_match.group(3).strip()
+                    stat['damage_type'] = atk_line_match.group(4).strip()
+                    continue # Move to next line after parsing ATK
+
+                parts = line.split(':', 1)
+                if len(parts) == 2:
+                    key = parts[0].strip().lower().replace(' ', '_')
+                    value = parts[1].strip()
+                    
+                    # Mapping for keys that don't directly match the statblock format
+                    key_map = {
+                        'motives_&_tactics': 'motives_tactics',
+                        'difficulty': 'difficulty',
+                        'thresholds': 'thresholds',
+                        'hp': 'hp',
+                        'stress': 'stress',
+                        'experience': 'experience',
+                        'impulses': 'impulses',
+                        'potential_adversaries': 'potential_adversaries',
+                    }
+                    key = key_map.get(key, key)
+
+                    if key in ['motives_tactics', 'impulses', 'experience']:
+                        stat[key] = [item.strip() for item in value.split(',')]
+                    elif key in ['difficulty', 'thresholds', 'hp', 'stress']:
+                        stat[key] = value # Keep as string
+                    else:
+                        stat[key] = value
+
+        if current_feature:
+            stat['features'].append(current_feature)
+
+        # Post-processing for damage_type if it's "Physical"
+        if stat.get('damage_type', '').lower() == 'physical':
+            stat['damage_type'] = 'phy'
+
+        # Ensure all expected fields are present, even if empty, for consistent output structure
+        default_fields = {
+            "atk": "", "category": "", "damage_dice": "", "damage_type": "",
+            "description": "", "difficulty": "", "experience": [], "features": [],
+            "hp": "", "motives_tactics": [], "name": "", "range": "",
+            "stress": "", "thresholds": "", "tier": "", "type": "",
+            "weapon": "", "impulses": [], "potential_adversaries": ""
+        }
+    elif stat['category']=='Environments':
+        feature_section = False # Flag to indicate if we are in the features section
+        current_feature = None # To build multi-line feature descriptions
+
+        for line in lines: # Iterate through the remaining lines
+            line_lower = line.lower()
+
+            if line_lower == 'features':
+                feature_section = True
+                if current_feature:
+                    stat['features'].append(current_feature)
+                    current_feature = None
+                continue
+
+            if line_lower.startswith('impulses:'):
+                motive_line = line.split(':', 1)[1]
+                stat['impulses'] = motive_line.strip().split(',')
+            elif line_lower.startswith('difficulty:'):
+                stat['difficulty'] = line.split(':', 1)[1]
+            elif line_lower.startswith('potential adversaries:'):
+                stat['potential_adversaries'] = line.split(':', 1)[1]
+            elif feature_section:
+                # Regex to capture feature name, type, and description
+                # Handles both (Type): and – Type:
+                feature_match = re.match(r'^(.*?)\s*(?:\((Action|Reaction|Passive|Evolution|Transformation)\)|–\s*(Action|Reaction|Passive|Evolution|Transformation))\s*:\s*(.*)$', line, re.IGNORECASE)
+                ick_match = re.match(r'^(.*?)\s*:\s*(.*)$', line, re.IGNORECASE)    
+                if feature_match:
+                    if current_feature:
+                        stat['features'].append(current_feature)
+                    
+                    feature_type = (feature_match.group(2) or feature_match.group(3) or '').strip().capitalize()
+                    current_feature = { # Store as dict
+                        "name": feature_match.group(1).strip(),
+                        "type": feature_type,
+                        "description": feature_match.group(4).strip()
+                    }
+                elif ick_match:
+                    if current_feature:
+                        stat['features'].append(current_feature)
+                    
+                    current_feature = { # Store as dict
+                        "name": ick_match.group(1).strip(),
+                        "type": 'Action',
+                        "description": ick_match.group(2).strip()
+                    }
+
+                elif current_feature:
+                    # Append to the description of the current feature
+                    current_feature["description"] += f"\n" + line.strip()
+        default_fields = {
+            "category": "Environments",
+            "description": "No description available",
+            "difficulty": 1,
+            "features": [],
+            "name": "Unknown",
+            "potential_adversaries": "Beasts (Bear, Dire Wolf, Glass Snake), Grove Guardians (Minor Treant, Sylvan Soldier, Young Dryad)",
+            "tier": "1",
+            "type": "Exploration"
+            }
+    for key, default_value in default_fields.items():
+        if key not in stat:
+            stat[key] = default_value
 
     return stat
 
