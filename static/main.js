@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
           .then(r => r.json())
           .then(data => {
             currentStatName = data.name; // Store the name
-            if (formattedEl) formattedEl.value = formatStatblock(data);
+            if (formattedEl) formattedEl.innerHTML = formatStatblock(data);
             const outputJson = transformToOutputJson(data);
             if (formattedJsonEl) formattedJsonEl.value = JSON.stringify(outputJson, null, 2);
           });
@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
       fetch('/api/retier', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)})
         .then(r => r.json())
         .then(data => {
-          if (formattedEl) formattedEl.value = formatStatblock(data);
+          if (formattedEl) formattedEl.innerHTML = formatStatblock(data);
           const outputJson = transformToOutputJson(data);
           if (formattedJsonEl) formattedJsonEl.value = JSON.stringify(outputJson, null, 2);
         });
@@ -113,29 +113,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function formatStatblock(s) {
     if (!s) return '';
-    let out = `**${s.name}**\n*Tier ${s.tier} ${s.type} ${s.category}*\n`;
+    let out = `<h3>${escapeHtml(s.name)}</h3><b>Tier ${escapeHtml(s.tier)} ${escapeHtml(s.type)} ${escapeHtml(s.category)}</b><br>`;
 
     if (s.description) {
-      out += `${s.description}\n`;
+      out += `${escapeHtml(s.description)}<br>`;
     }
 
     if (s.category === 'Adversaries') {
-      if (s.motives_tactics) out += `**Motives & Tactics:** ${s.motives_tactics}\n`;
-      out += `**Difficulty:** ${s.difficulty || ''}\n`;
-      out += `**Thresholds:** ${s.thresholds || ''} | **HP:** ${s.hp || ''} | **Stress:** ${s.stress || ''}\n`;
+      if (s.motives_tactics) out += `<strong>Motives & Tactics:</strong> ${escapeHtml(s.motives_tactics)}<br>`;
+      out += '<div style="background: white;border-top: 1px solid red;border-bottom: 1px solid red;margin: 8px;padding: 2px;">'
+      out += `<strong>Difficulty:</strong> ${escapeHtml(s.difficulty || '')} | <strong>Thresholds:</strong> ${escapeHtml(s.thresholds || '')} | <strong>HP:</strong> ${escapeHtml(s.hp || '')} | <strong>Stress:</strong> ${escapeHtml(s.stress || '')}<br>`;
       // Weapon line
-      out += `**${s.weapon || 'Weapon'}** (${s.atk || ''}, ${s.range || 'Range'}) - ${s.damage_dice || ''} ${s.damage_type || ''} damage\n`;
-      out += `**Experience:** ${s.experience || ''}\n`;
+      out += `<strong>ATK:</strong> ${escapeHtml(s.atk || '')} | <strong>${escapeHtml(s.weapon || 'Weapon')}</strong> ${escapeHtml(s.range || 'Range')} | <strong>${escapeHtml(s.damage_dice || '')}</strong> ${escapeHtml(s.damage_type || '')}<br>`;
+      out += '<div data-orientation="horizontal" role="none" data-slot="separator-root" class="border  border-neutral-200 border-dotted my-2"></div>'
+      out += `<strong>Experience:</strong> ${escapeHtml(s.experience || '')}<br>`;
+      out += '</div>'
     } else if (s.category === 'Environments') {
-      if (s.impulses) out += `**Impulses:** ${s.impulses}\n`;
-      out += `**Difficulty:** ${s.difficulty || ''}\n`;
-      if (s.potential_adversaries) out += `**Potential Adversaries:** ${s.potential_adversaries}\n`;
+      if (s.impulses) out += `<strong>Impulses:</strong> ${escapeHtml(s.impulses)}<br>`;
+      out += `<strong>Difficulty:</strong> ${escapeHtml(s.difficulty || '')}<br>`;
+      if (s.potential_adversaries) out += `<strong>Potential Adversaries:</strong> ${escapeHtml(s.potential_adversaries)}<br>`;
     }
 
-    out += `**Features**\n`;
+    out += `<br><strong>Features</strong>`;
+    let featuresHtml = '<ul class="list-unstyled">';
     (s.features || []).forEach(f => {
-      out += `* **${f.name} (${f.type}):** ${f.description}\n`;
+      featuresHtml += `<li><strong>${escapeHtml(f.name)} (${escapeHtml(f.type)}):</strong> ${escapeHtml(f.description)}</li>`;
     });
+    featuresHtml += '</ul>';
+    out += featuresHtml;
+
     return out;
   }
 
