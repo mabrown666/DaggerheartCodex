@@ -183,6 +183,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Transform Adversary to the desired output format
     const output = {
       name: s.name || '',
+      category: s.category || '',
+      tier: parseInt(s.tier, 10) || 1,
+      type: s.type || '',
+      description: s.description || '',
+      motives_tactics: s.motives_tactics.join([separator = ',']) || '',
       hp: s.hp || '',
       stress: s.stress || '',
       thresholds: s.thresholds || '',
@@ -222,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Features
-    output.features = (s.features || []).map(f => ({ name: f.name, effect: f.description }));
+    output.features = (s.features || []).map(f => ({ name: f.name, effect: f.description, type: f.type}));
 
     return output;
   }
@@ -232,6 +237,82 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(str).replace(/[&<>"']/g, function (c) {
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c];
     });
+  }
+
+  // --- Update Page Specific ---
+
+  // Helper to safely set element value
+  function setElementValue(elementId, value) {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.value = value;
+    }
+  }
+
+  // Helper to safely set element innerHTML
+  function setElementInnerHTML(elementId, value) {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.innerHTML = value;
+    }
+  }
+
+  function populateUpdateForm(data) {
+    if (!data || !data.name) return;
+
+    const nameField = document.getElementById('name');
+    const updateCategoryEl = document.getElementById('category');
+    const updateTypeEl = document.getElementById('type');
+    const tierField = document.getElementById('tier');
+    const formTitleEl = document.getElementById('formTitle');
+    const descriptionField = document.getElementById('description');
+    const featuresDiv = document.getElementById('features');
+
+    if (formTitleEl) formTitleEl.textContent = 'Edit: ' + (data.name || 'Stat Block');
+    if (nameField) nameField.value = data.name || '';
+    if (updateCategoryEl) updateCategoryEl.value = data.category || '';
+    
+    // Load types for the selected category, then set the type
+    if (updateCategoryEl && updateTypeEl) {
+      loadTypesForCategory(updateCategoryEl.value, updateTypeEl);
+      setTimeout(() => { if (updateTypeEl) updateTypeEl.value = data.type || ''; }, 100);
+    }
+
+    if (tierField) tierField.value = data.tier || '';
+    if (descriptionField) descriptionField.value = data.description || '';
+
+    // Clear existing features before adding new ones
+    if (featuresDiv) featuresDiv.innerHTML = '';
+
+    // Clear all category-specific fields to prevent stale data
+    const allCategorySpecificFields = [
+      'motives_tactics', 'difficulty', 'thresholds', 'hp', 'stress', 'atk',
+      'weapon', 'weapon_range', 'weapon_damage_dice', 'weapon_damage_type', 'experience',
+      'impulses', 'env_difficulty', 'potential_adversaries'
+    ];
+    allCategorySpecificFields.forEach(id => setElementValue(id, ''));
+
+    // Populate category-specific fields
+    if (data.category === 'Adversaries') {
+      setElementValue('motives_tactics', Array.isArray(data.motives_tactics) ? data.motives_tactics.join(', ') : (data.motives_tactics || ''));
+      setElementValue('difficulty', data.difficulty || '');
+      setElementValue('thresholds', data.thresholds || '');
+      setElementValue('hp', data.hp || '');
+      setElementValue('stress', data.stress || '');
+      setElementValue('atk', data.atk || '');
+      setElementValue('weapon', data.weapon || '');
+      setElementValue('weapon_range', data.range || '');
+      setElementValue('weapon_damage_dice', data.damage_dice || '');
+      setElementValue('weapon_damage_type', data.damage_type || '');
+      setElementValue('experience', Array.isArray(data.experience) ? data.experience.join(', ') : (data.experience || ''));
+    } else if (data.category === 'Environments') {
+      setElementValue('impulses', Array.isArray(data.impulses) ? data.impulses.join(', ') : (data.impulses || ''));
+      setElementValue('env_difficulty', data.difficulty || '');
+      setElementValue('potential_adversaries', data.potential_adversaries || '');
+    }
+
+    (data.features || []).forEach(f => addFeatureRow(f));
+    toggleCategoryFields();
   }
 
   // Update page wiring
@@ -246,6 +327,28 @@ document.addEventListener('DOMContentLoaded', function () {
     const updateCategoryEl = document.getElementById('category');
     const updateTypeEl = document.getElementById('type');
 
+    const loadBtn = document.getElementById('loadBtn');
+    const loadModalEl = document.getElementById('loadModal');
+    const loadStatblockSaveBtn = document.getElementById('loadStatblockSave');
+    const loadStatblockTextEl = document.getElementById('loadStatblockText');
+
+    if (loadBtn && loadModalEl) {
+      const loadModal = new bootstrap.Modal(loadModalEl);
+      loadBtn.addEventListener('click', () => loadModal.show());
+
+      loadStatblockSaveBtn.addEventListener('click', () => {
+        const text = loadStatblockTextEl.value;
+        if (!text.trim()) return;
+
+        fetch('/api/load_statblock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text }) })
+          .then(r => r.json())
+          .then(data => {
+            populateUpdateForm(data);
+            if (loadStatblockSaveBtn) loadStatblockSaveBtn.blur(); // Remove focus from the button
+            loadModal.hide();
+          });
+      });
+    }
     // Function to replace newlines with spaces
     function handleFormatNewline(event) {
       const button = event.currentTarget;
@@ -303,38 +406,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (nameParam) {
       fetch(`/api/stat/${encodeURIComponent(nameParam)}`)
         .then(r => r.json())
-        .then(data => {
-          if (data && data.name) {
-            document.getElementById('formTitle').textContent = 'Edit: ' + data.name;
-            nameField.value = data.name;
-            updateCategoryEl.value = data.category || updateCategoryEl.value;
-            loadTypesForCategory(updateCategoryEl.value, updateTypeEl);
-            setTimeout(() => { updateTypeEl.value = data.type || ''; }, 100);
-            tierField.value = data.tier || '';
-            document.getElementById('description').value = data.description || '';
-
-            if (data.category === 'Adversaries') {
-              document.getElementById('motives_tactics').value = data.motives_tactics || '';
-              document.getElementById('difficulty').value = data.difficulty || '';
-              document.getElementById('thresholds').value = data.thresholds || '';
-              document.getElementById('hp').value = data.hp || '';
-              document.getElementById('stress').value = data.stress || '';
-              document.getElementById('atk').value = data.atk || '';
-              document.getElementById('weapon').value = data.weapon || '';
-              document.getElementById('weapon_range').value = data.range || '';
-              document.getElementById('weapon_damage_dice').value = data.damage_dice || '';
-              document.getElementById('weapon_damage_type').value = data.damage_type || '';
-              document.getElementById('experience').value = data.experience || '';
-            } else if (data.category === 'Environments') {
-              document.getElementById('impulses').value = data.impulses || '';
-              document.getElementById('env_difficulty').value = data.difficulty || '';
-              document.getElementById('potential_adversaries').value = data.potential_adversaries || '';
-            }
-
-            (data.features || []).forEach(f => addFeatureRow(f));
-            toggleCategoryFields();
-          }
-        });
+        .then(populateUpdateForm);
     } else {
       // initialize types for selected category
       const categoryParam = params.get('category');

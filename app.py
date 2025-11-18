@@ -120,6 +120,138 @@ def retier(stat, new_tier):
 
     return stat
 
+def parse_text_statblock(text):
+    """Parses a custom text block format into a statblock dictionary."""
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    if not lines:
+        return {}
+
+    stat = {
+        "features": []
+    }
+
+    # First line is usually the name
+    stat['name'] = lines.pop(0)
+
+    # Second line for Tier, Type, Category
+    if lines:
+        tier_line = lines.pop(0)
+        tier_match = re.search(r'Tier (\d+)', tier_line, re.IGNORECASE)
+        if tier_match:
+            stat['tier'] = int(tier_match.group(1))
+
+        # Infer category and type
+        for cat, types in CATEGORIES.items():
+            for t in types:
+                if re.search(r'\b' + re.escape(t) + r'\b', tier_line, re.IGNORECASE):
+                    stat['category'] = cat
+                    stat['type'] = t
+                    break
+            if stat.get('category'):
+                break
+
+    # Key-value pairs and features
+    feature_section = False
+    current_feature = None
+
+    for line in lines:
+        if line.lower() == 'features':
+            feature_section = True
+            if current_feature:
+                stat['features'].append(current_feature)
+                current_feature = None
+            continue
+
+        if feature_section:
+            # Regex to capture feature name, type, and description
+            feature_match = re.match(r'^(.*?)\s*\((Action|Reaction|Passive|Evolution|Transformation)\s*\):(.*)$', line, re.IGNORECASE)
+            if feature_match:
+                if current_feature:
+                    stat['features'].append(current_feature)
+                
+                current_feature = {
+                    "name": feature_match.group(1).strip(),
+                    "type": feature_match.group(2).strip().capitalize(),
+                    "description": feature_match.group(3).strip()
+                }
+            elif current_feature:
+                # Append to the description of the current feature
+                current_feature["description"] += " " + line
+        else:
+            # Handle key-value pairs
+            parts = line.split(':', 1)
+            if len(parts) == 2:
+                key, value = parts[0].strip().lower().replace(' ', '_'), parts[1].strip()
+                
+                # Mapping for keys that don't directly match the statblock format
+                key_map = {
+                    'motives_&_tactics': 'motives_tactics',
+                    'potential_adversaries': 'potential_adversaries',
+                    'damage': 'damage_dice' # Assuming a simple format for now
+                }
+                key = key_map.get(key, key)
+
+                if key in ['motives_tactics', 'impulses', 'experience']:
+                    stat[key] = [item.strip() for item in value.split(',')]
+                elif key == 'damage_dice':
+                    damage_parts = value.split()
+                    stat['damage_dice'] = damage_parts[0] if len(damage_parts) > 0 else ''
+                    stat['damage_type'] = damage_parts[1] if len(damage_parts) > 1 else ''
+                else:
+                    stat[key] = value
+
+    if current_feature:
+        stat['features'].append(current_feature)
+
+    # If description is not found as a key, assume the first long line after tier is description
+    if 'description' not in stat and lines:
+        # A simple heuristic: if a line has more than 5 words and no ':', it's likely a description.
+        for i, line in enumerate(lines):
+             if len(line.split()) > 5 and ':' not in line and not feature_section:
+                 stat['description'] = line
+                 break
+
+    return stat
+
+def load_statblock(text):
+    try:
+        statblock = json.loads(text)
+        # Transform "attacks" array if it exists
+        if 'attacks' in statblock and isinstance(statblock['attacks'], list) and statblock['attacks']:
+            attack = statblock['attacks'][0]
+            
+            statblock['weapon'] = attack.get('name')
+            
+            attack_bonus = attack.get('attack_bonus', 0)
+            if isinstance(attack_bonus, (int, float)):
+                 statblock['atk'] = f"{'+' if attack_bonus > 0 else ''}{attack_bonus}"
+            else:
+                 statblock['atk'] = str(attack_bonus)
+
+            statblock['damage_dice'] = attack.get('damage')
+            statblock['damage_type'] = attack.get('damage_type')
+            statblock['range'] = attack.get('range')
+            del statblock['attacks']
+
+        # Transform "effect" to "description" in features
+        if 'features' in statblock and isinstance(statblock['features'], list):
+            for feature in statblock['features']:
+                if 'effect' in feature:
+                    feature['description'] = feature.pop('effect')
+
+        # Transform "experiences" array to "experience"
+        if 'experiences' in statblock and isinstance(statblock['experiences'], list):
+            new_experience = []
+            for exp in statblock['experiences']:
+                name = exp.get('name', '')
+                value = exp.get('value', '')
+                new_experience.append(f"{name} {value}".strip())
+            statblock['experience'] = new_experience
+            del statblock['experiences']
+
+        return statblock
+    except json.JSONDecodeError:
+        return parse_text_statblock(text)
 
 @app.route('/')
 def index():
@@ -247,6 +379,18 @@ def api_retier():
     modified_stat = retier(stat.copy(), new_tier)
     return jsonify(modified_stat or stat)
 
+@app.route('/api/load_statblock', methods=['POST'])
+def api_load_statblock():
+    """
+    Parses raw text from the request and returns a structured statblock object.
+    """
+    payload = request.get_json() or {}
+    text = payload.get('text', '')
+    if not text:
+        return jsonify({'error': 'Text is required'}), 400
+    
+    statblock = load_statblock(text)
+    return jsonify(statblock)
 
 @app.route('/api/save', methods=['POST'])
 def api_save():
