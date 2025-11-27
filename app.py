@@ -187,12 +187,12 @@ def parse_text_statblock(text):
             if feature_section:
                 # Regex to capture feature name, type, and description
                 # Handles both (Type): and – Type:
-                feature_match = re.match(r'^(.*?)\s*(?:\((Action|Reaction|Passive|Evolution|Transformation)\)|–\s*(Action|Reaction|Passive|Evolution|Transformation))\s*:\s*(.*)$', line, re.IGNORECASE)
+                feature_match = re.match(r'^(.*?)\s*(?:\((Action|Reaction|Passive|Evolution|Transformation)\)|[-–]\s*(Action|Reaction|Passive|Evolution|Transformation))\s*:\s*(.*)$', line, re.IGNORECASE)
                 if feature_match:
                     if current_feature:
                         stat['features'].append(current_feature)
                     
-                    feature_type = (feature_match.group(2) or feature_match.group(3) or '').strip().capitalize()
+                    feature_type = (feature_match.group(2) or feature_match.group(3) or '').strip().capitalize() or 'Passive'
                     current_feature = { # Store as dict
                         "name": feature_match.group(1).strip(),
                         "type": feature_type,
@@ -209,10 +209,9 @@ def parse_text_statblock(text):
                     stat['thresholds'] = Difficulty_line_match.group(2).strip()
                     stat['hp'] = Difficulty_line_match.group(3).strip()
                     stat['stress'] =Difficulty_line_match.group(4).strip()
-                    continue # Move to next line after parsing Difficulty
 
                 # Specific parsing for ATK line due to its complex structure
-                atk_line_match = re.match(r'ATK:\s*([+-]?\d+)\s*\|\s*(.*?)\s*\|\s*(\S+)\s*(\S+)', line, re.IGNORECASE)
+                atk_line_match = re.search(r"[Aa][Tt][Kk]:\s*([+-]?\d+)\s*\|\s*(.*?)\s*\|\s*(\S+)\s*(\S+)", line, re.IGNORECASE)
                 if atk_line_match:
                     stat['atk'] = atk_line_match.group(1).strip()
                     weapon_and_range_str = atk_line_match.group(2).strip()
