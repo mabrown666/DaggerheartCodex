@@ -344,8 +344,12 @@ document.addEventListener('DOMContentLoaded', function () {
           .then(r => r.json())
           .then(data => {
             populateUpdateForm(data);
+            const outputJson = transformToOutputJson(data);
             if (loadStatblockSaveBtn) loadStatblockSaveBtn.blur(); // Remove focus from the button
             loadModal.hide();
+            document.getElementById('outputJsonStat').value = JSON.stringify(outputJson, null, 2);
+            const loadModal2 = new bootstrap.Modal(document.getElementById('loadModal2'));
+            loadModal2.show();
           });
       });
     }

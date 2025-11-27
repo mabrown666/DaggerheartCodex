@@ -165,6 +165,22 @@
   <a class="btn btn-outline-secondary" href="/">Cancel</a>
   <button id="loadBtn" class="btn btn-info">Load from Text</button>
 </div>
+<div class="modal fade" id="loadModal2" tabindex="-1" aria-labelledby="loadModalLabel2" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loadModalLabel2">JSON version of loaded data</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <textarea id="outputJsonStat" class="form-control" rows="15" placeholder="Paste statblock text here..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Load from Text Modal -->
 <div class="modal fade" id="loadModal" tabindex="-1" aria-labelledby="loadModalLabel" aria-hidden="true">
